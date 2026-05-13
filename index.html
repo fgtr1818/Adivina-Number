@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Truco de los Números — Tarjetas Binarias</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Cinzel:wght@400;600&display=swap');
+
+:root {
+–verde: #00e838;
+–verde-glow: rgba(0,232,56,0.35);
+–verde-dim: #00a828;
+–fondo: #080808;
+–panel: #0d0d0d;
+–borde: #1c3a1c;
+}
+
+- { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+background: var(–fondo);
+font-family: ‘Courier Prime’, monospace;
+color: var(–verde);
+min-height: 100vh;
+padding: 40px 20px 60px;
+}
+
+/* ── HEADER ── */
+header {
+text-align: center;
+margin-bottom: 50px;
+}
+header h1 {
+font-family: ‘Cinzel’, serif;
+font-size: clamp(18px, 3vw, 28px);
+letter-spacing: 6px;
+color: var(–verde);
+text-shadow: 0 0 20px var(–verde-glow);
+margin-bottom: 8px;
+}
+header p {
+color: var(–verde-dim);
+font-size: 13px;
+letter-spacing: 3px;
+}
+.line-dec {
+width: 200px;
+height: 1px;
+background: linear-gradient(90deg, transparent, var(–verde), transparent);
+margin: 14px auto;
+}
+
+/* ── VERIFICADOR ── */
+.verificador {
+max-width: 520px;
+margin: 0 auto 50px;
+background: var(–panel);
+border: 1px solid var(–borde);
+border-radius: 10px;
+padding: 20px 24px;
+position: relative;
+}
+.verificador::before {
+content: ‘ADIVINA EL NÚMERO’;
+position: absolute;
+top: -10px; left: 20px;
+background: var(–fondo);
+padding: 0 10px;
+font-size: 10px;
+letter-spacing: 3px;
+color: var(–verde-dim);
+}
+.ver-row {
+display: flex;
+gap: 10px;
+align-items: center;
+flex-wrap: wrap;
+}
+.ver-row input {
+background: #111;
+border: 1px solid #2a5a2a;
+color: var(–verde);
+font-family: ‘Courier Prime’, monospace;
+font-size: 22px;
+padding: 8px 14px;
+width: 110px;
+border-radius: 6px;
+outline: none;
+text-align: center;
+}
+.ver-row input:focus { border-color: var(–verde); box-shadow: 0 0 10px var(–verde-glow); }
+.ver-row button {
+background: transparent;
+border: 1px solid var(–verde);
+color: var(–verde);
+font-family: ‘Courier Prime’, monospace;
+font-size: 13px;
+letter-spacing: 2px;
+padding: 10px 18px;
+border-radius: 6px;
+cursor: pointer;
+transition: all 0.2s;
+}
+.ver-row button:hover { background: rgba(0,232,56,0.1); box-shadow: 0 0 10px var(–verde-glow); }
+#resultado {
+margin-top: 14px;
+font-size: 13px;
+color: var(–verde-dim);
+letter-spacing: 1px;
+min-height: 20px;
+line-height: 1.8;
+}
+#resultado .highlight { color: var(–verde); font-weight: bold; }
+
+/* ── GRID DE TARJETAS ── */
+.grid-tarjetas {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+gap: 24px;
+max-width: 1100px;
+margin: 0 auto;
+}
+
+/* ── TARJETA ── */
+.tarjeta {
+background: var(–panel);
+border: 1px solid var(–borde);
+border-radius: 12px;
+overflow: hidden;
+transition: box-shadow 0.3s;
+position: relative;
+}
+.tarjeta.activa {
+border-color: var(–verde);
+box-shadow: 0 0 30px var(–verde-glow), inset 0 0 40px rgba(0,232,56,0.04);
+}
+.tarjeta.activa .cab {
+background: rgba(0,232,56,0.08);
+}
+
+/* Cabecera de tarjeta */
+.cab {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 12px 16px;
+border-bottom: 1px solid var(–borde);
+background: rgba(255,255,255,0.01);
+}
+.cab-izq { display: flex; align-items: baseline; gap: 8px; }
+.cab-num {
+font-family: ‘Cinzel’, serif;
+font-size: 22px;
+color: var(–verde);
+text-shadow: 0 0 10px var(–verde-glow);
+}
+.cab-label {
+font-size: 10px;
+color: var(–verde-dim);
+letter-spacing: 2px;
+}
+.cab-der { text-align: right; }
+.cab-bit {
+font-size: 11px;
+color: var(–verde-dim);
+letter-spacing: 1px;
+}
+.cab-valor {
+font-size: 18px;
+color: var(–verde);
+}
+
+/* Bits visuales */
+.bits-visual {
+display: flex;
+justify-content: center;
+gap: 3px;
+padding: 8px 16px 0;
+}
+.bit-box {
+width: 22px; height: 22px;
+border: 1px solid #1a3a1a;
+border-radius: 4px;
+display: flex; align-items: center; justify-content: center;
+font-size: 10px;
+color: #1a4a1a;
+background: #0a0a0a;
+transition: all 0.3s;
+}
+.bit-box.on {
+border-color: var(–verde);
+color: var(–verde);
+background: rgba(0,232,56,0.12);
+box-shadow: 0 0 6px var(–verde-glow);
+}
+
+/* Números */
+.nums-wrap {
+padding: 10px 12px 14px;
+max-height: 200px;
+overflow-y: auto;
+scrollbar-width: thin;
+scrollbar-color: #1a3a1a transparent;
+}
+.nums-wrap::-webkit-scrollbar { width: 4px; }
+.nums-wrap::-webkit-scrollbar-thumb { background: #1a3a1a; border-radius: 2px; }
+
+.nums-grid {
+display: grid;
+grid-template-columns: repeat(8, 1fr);
+gap: 2px;
+}
+.n {
+font-size: 13px;
+text-align: center;
+padding: 3px 1px;
+color: #00b828;
+border-radius: 3px;
+transition: all 0.2s;
+}
+.n.primero {
+color: var(–verde);
+font-weight: bold;
+font-size: 15px;
+text-shadow: 0 0 8px var(–verde-glow);
+}
+.n.resaltado {
+background: rgba(0,232,56,0.2);
+color: #fff;
+box-shadow: 0 0 6px var(–verde-glow);
+}
+
+/* Footer tarjeta */
+.cab-footer {
+padding: 6px 16px 10px;
+font-size: 10px;
+color: #1a4a1a;
+letter-spacing: 1px;
+border-top: 1px solid #0f250f;
+text-align: center;
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <h1>EL TRUCO BINARIO</h1>
+  <div class="line-dec"></div>
+  <p>10 TARJETAS · 1 A 1023 · SISTEMA BASE 2</p>
+</header>
+
+<!-- Verificador -->
+
+<div class="verificador">
+  <div class="ver-row">
+    <input type="number" id="inp" min="1" max="1023" placeholder="???" />
+    <button onclick="verificar()">ADIVINAR</button>
+    <button onclick="limpiar()">LIMPIAR</button>
+  </div>
+  <div id="resultado"></div>
+</div>
+
+<!-- Tarjetas -->
+
+<div class="grid-tarjetas" id="tarjetas"></div>
+
+<script>
+const TARJETAS = (function(){
+  const t = [];
+  for(let k=0; k<10; k++){
+    const valor = Math.pow(2,k);
+    const nums = [];
+    for(let n=1; n<=1023; n++) if(n & valor) nums.push(n);
+    t.push({ id:k+1, bit:k, valor, nums });
+  }
+  return t;
+})();
+
+function renderTarjetas(resaltado){
+  const cont = document.getElementById('tarjetas');
+  cont.innerHTML = '';
+
+  TARJETAS.forEach(t => {
+    const activa = resaltado !== undefined && (resaltado & t.valor);
+    const div = document.createElement('div');
+    div.className = 'tarjeta' + (activa ? ' activa' : '');
+    div.id = 'tarjeta-' + t.id;
+
+    // Bits visuales (10 bits, el activo encendido)
+    let bitsHtml = '<div class="bits-visual">';
+    for(let b=9; b>=0; b--){
+      const on = b === t.bit ? 'on' : '';
+      bitsHtml += `<div class="bit-box ">'0'</div>`;
+    }
+    bitsHtml += '</div>';
+
+    // Números
+    let numsHtml = '<div class="nums-wrap"><div class="nums-grid">';
+    t.nums.forEach((n,i) => {
+      const primero = i===0 ? ' primero' : '';
+      const res = (resaltado !== undefined && n===resaltado) ? ' resaltado' : '';
+      numsHtml += `<div class="n"></div>`;
+    });
+    numsHtml += '</div></div>';
+
+    div.innerHTML = `
+      <div class="cab">
+        <div class="cab-izq">
+          <span class="cab-num">T</span>
+          <span class="cab-label">TARJETA </span>
+        </div>
+        <div class="cab-der">
+          <div class="cab-bit">BIT  · 2<sup></sup></div>
+          <div class="cab-valor"></div>
+        </div>
+      </div>
+      
+      
+      <div class="cab-footer"> números · primer valor: </div>
+    `;
+    cont.appendChild(div);
+  });
+}
+
+function verificar(){
+  const val = parseInt(document.getElementById('inp').value);
+  if(isNaN(val) || val < 1 || val > 1023){
+    document.getElementById('resultado').innerHTML = '<span style="color:#a83000">Ingresa un número entre 1 y 1023</span>';
+    renderTarjetas(undefined);
+    return;
+  }
+
+  const tarjetasActivas = [];
+  let suma = 0;
+  for(let k=0; k<10; k++){
+    if(val & Math.pow(2,k)){
+      tarjetasActivas.push(k+1);
+      suma += Math.pow(2,k);
+    }
+  }
+
+  const binario = val.toString(2).padStart(10,'0');
+  const eq = tarjetasActivas.map(t => Math.pow(2,t-1)).join(' + ');
+
+  document.getElementById('resultado').innerHTML =
+    `Aparece en tarjetas: <span class="highlight"></span><br>` +
+    `Binario: <span class="highlight"></span><br>` +
+    `Suma: <span class="highlight"> = </span>`;
+
+  renderTarjetas(val);
+
+  // Scroll a primera tarjeta activa
+  const primera = document.getElementById('tarjeta-' + tarjetasActivas[0]);
+  if(primera) primera.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function limpiar(){
+  document.getElementById('inp').value = '';
+  document.getElementById('resultado').innerHTML = '';
+  renderTarjetas(undefined);
+}
+
+document.getElementById('inp').addEventListener('keydown', e => {
+  if(e.key === 'Enter') verificar();
+});
+
+// Render inicial
+renderTarjetas(undefined);
+</script>
+
+</body>
+</html>
